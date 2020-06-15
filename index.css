@@ -3,20 +3,23 @@ body {
     margin: 10px;
   }
 
-  .grid {
-      background-color: rgb(184, 87, 167);
-      align-content: center;
-  }
-
-  .board-row:after {
-    clear: both;
-    content: "";
-    display: table;
+  .grid, .tr, .td {
+      border-spacing: 0px;
   }
 
   .square {
     background: #aaffff;
-    border: 1px solid #f00;
+    border: 1px solid #eaa;
     float: left;
+    overflow: hidden;
+    box-sizing: border-box;
   }
- 
+
+  .square.selected {
+    border: 5px solid #06a;
+    box-sizing: border-box;
+  }
+
+  .square img {
+    overflow: hidden;
+  }

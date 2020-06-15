@@ -3,10 +3,22 @@ import ReactDOM from 'react-dom';
 import './index.css';
 
 function Square(props) {
+    const index = props.value;
+    const x = index % props.rows;
+    const y = Math.floor(index / props.rows);
+    let classes = "square";
+    if (index === 3) {
+        classes += " selected";
+    }
     return (
-        <div className="square" onClick={() => props.handleClick()}>
-            <img src="img/camping.jpg" alt="{props.value}" width={props.w} height={props.h}/>
-        </div>
+        <td className={classes} onClick={() => props.handleClick()} style={{"width": props.w, "height": props.h}}>
+            <img src="img/camping.jpg" alt="stub" style={{
+                "margin-top" : -y*props.h + "px",
+                "width": props.cols*props.w + "px",
+                "height" : props.rows*props.h + "px",
+                "margin-left": -x*props.w + "px",
+            }}/>
+        </td>
     );
 }
 
@@ -58,8 +70,8 @@ class Board extends React.Component {
 
     renderSquare(i) {
         const aspect = 4/3;
-        let width = (window.innerWidth - 100) / 3;
-        let height = (window.innerHeight - 100) / 3;
+        let width = 0.9*(window.innerWidth) / 3;
+        let height = 0.9*(window.innerHeight) / 3;
         if (width / height > aspect) {
             width = height * aspect;
         }
@@ -71,28 +83,32 @@ class Board extends React.Component {
         handleClick={() => this.handleClick(i)} 
         w = {width}
         h = {height}
+        rows = {this.state.rows}
+        cols = {this.state.cols}
         />;
     }
 
     render() {
         return (
-            <div className="grid">
-                <div className="board-row">
+            <center>
+            <table className="grid">
+                <tr className="board-row">
                     {this.renderSquare(null)}
                     {this.renderSquare(1)}
                     {this.renderSquare(2)}
-                </div>
-                <div className="board-row">
+                </tr>
+                <tr className="board-row">
                     {this.renderSquare(3)}
                     {this.renderSquare(4)}
                     {this.renderSquare(5)}
-                </div>
-                <div className="board-row">
+                </tr>
+                <tr className="board-row">
                     {this.renderSquare(6)}
                     {this.renderSquare(7)}
                     {this.renderSquare(8)}
-                </div>
-            </div>
+                </tr>
+            </table>
+            </center>
         );
     }
 }
