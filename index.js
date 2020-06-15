@@ -5,7 +5,7 @@ import './index.css';
 function Square(props) {
     return (
         <div className="square" onClick={() => props.handleClick()}>
-            {props.value}
+            <img src="img/camping.jpg" alt="{props.value}" width={props.w} height={props.h}/>
         </div>
     );
 }
@@ -13,9 +13,13 @@ function Square(props) {
 class Board extends React.Component {
     constructor(props) {
         super(props);
-        var w = 3;
-        var h = 3;
-        this.state = { squares: [...Array(9).keys()].map( i => i === 0 ? null : i ), width: w, height: h };
+        var x = 3;
+        var y = 3;
+        this.state = { squares: [...Array(9).keys()].map( i => i === 0 ? null : i ), cols: x, rows: y, width: window.innerWidth, height: window.innerHeight };
+
+        setInterval(() => {
+            this.setState({...this.state, width: window.innerWidth, height: window.innerHeight});
+        }, 2000);
     }
 
     neighborsOf(i) {
@@ -53,33 +57,50 @@ class Board extends React.Component {
     }
 
     renderSquare(i) {
-        return <Square value={this.state.squares[i]} handleClick={() => this.handleClick(i)} />;
+        const aspect = 4/3;
+        let width = (window.innerWidth - 100) / 3;
+        let height = (window.innerHeight - 100) / 3;
+        if (width / height > aspect) {
+            width = height * aspect;
+        }
+        else {
+            height = width / aspect;
+        }
+        return <Square 
+        value={this.state.squares[i]} 
+        handleClick={() => this.handleClick(i)} 
+        w = {width}
+        h = {height}
+        />;
     }
 
     render() {
         return (
-                <div className="grid">
-                    {this.renderSquare(0)}
+            <div className="grid">
+                <div className="board-row">
+                    {this.renderSquare(null)}
                     {this.renderSquare(1)}
                     {this.renderSquare(2)}
+                </div>
+                <div className="board-row">
                     {this.renderSquare(3)}
                     {this.renderSquare(4)}
                     {this.renderSquare(5)}
+                </div>
+                <div className="board-row">
                     {this.renderSquare(6)}
                     {this.renderSquare(7)}
                     {this.renderSquare(8)}
                 </div>
+            </div>
         );
     }
 }
 
 class Game extends React.Component {
     render() {
-
         return (
-            <div className="game">
-                <Board />
-            </div>
+            <Board />
         );
     }
 }
