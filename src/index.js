@@ -114,9 +114,28 @@ class Board extends React.Component {
 }
 
 class Game extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {hasLocation: false};
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(position => {
+                this.setState({coords: position.coords, hasLocation: true});
+            });
+        } else {
+            this.setState({hasLocation: false});
+        }
+    }
+
     render() {
         return (
-            <Board />
+            <div>
+                { this.state.hasLocation 
+                ? <p> Location: {this.state.coords.latitude}, {this.state.coords.longitude} </p> 
+                : <p> Location unavailable! </p> }    
+                
+                <Board />
+            </div>
         );
     }
 }

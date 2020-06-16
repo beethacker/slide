@@ -1,0 +1,25 @@
+   table {
+            style = "width: ${W}px; height: ${H}px;"
+            for (row in 0 until puzzle.rows) {
+                tr {
+                    for (col in 0 until puzzle.cols) {
+                        td {
+                            var classes = "cell"
+                            if (row == 2 && col == 1) {//TESTING
+                                classes += " selected"
+                            }
+                            div(classes) {
+                                style = "width: ${cellW}px; height: ${cellH}px;"
+                                img(src = imgPath) {
+                                    val imCell = puzzle.mapToImgCell(Cell(row, col))
+                                    val top = cellH * imCell.row
+                                    val left = cellW * imCell.col
+                                    style =
+                                        "width: ${W}px; height: ${H}px; margin-top: ${-top}px; margin-left: ${-left}px;"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
