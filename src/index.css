@@ -7,19 +7,58 @@ body {
       border-spacing: 0px;
   }
 
-  .square {
-    background: #aaffff;
-    border: 1px solid #eaa;
-    float: left;
-    overflow: hidden;
-    box-sizing: border-box;
+  .grid {
+    border: 4px solid #000;
+    margin-top: 30px;
   }
 
+  .square {
+    background: #000;
+    border: 4px solid #000;
+    float: left;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Overlay instead! */
   .square.selected {
-    border: 5px solid #06a;
-    box-sizing: border-box;
+    border: 4px solid #2ea1be;
   }
 
   .square img {
     overflow: hidden;
+    z-index: 1;
+  }
+
+  .rel {
+    position: relative;
+  }
+
+  .circle {
+    position: absolute;
+    border-radius: 50%;
+    background-color: lawngreen;
+    z-index: 5;
+    left: -10px;
+    top: -10px;
+    width: 20px;
+    height: 20px;
+  }
+
+  .center-circle {
+    position: absolute;
+    z-index: 5;
+    border-radius: 50%;
+    border: 3px solid #eaa;
+    width: 60px;
+    height: 60px;
+    left: -30px;
+    top: -30px;
+    opacity: 0.85;
+  }
+
+  .center-circle.active {
+     opacity: 1;
+     border-width: 4px;
+     border-color: #06a;
   }
