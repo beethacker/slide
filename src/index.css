@@ -25,6 +25,10 @@ body {
     border: 4px solid #2ea1be;
   }
 
+  .square.empty {
+    background-color: transparent;
+  }
+
   .square img {
     overflow: hidden;
     z-index: 1;

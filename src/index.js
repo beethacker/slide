@@ -31,14 +31,14 @@ function CroppedImage(props) {
 
 function Square(props) {
     const index = props.value;
+    if (!index) {
+        return <td className="square empty" style={{"width": props.w, "height": props.h}}></td>;
+    }
     const active = false;
     const inCell = index === 3;
     const x = index % props.rows;
     const y = Math.floor(index / props.rows);
-    let classes = "square";
-    if (inCell) {
-        classes += " selected";
-    }
+    let classes = inCell ? "square selected" : "square";
     let overlay = null;
     if (inCell) {
         overlay = <>
@@ -63,6 +63,10 @@ class Board extends React.Component {
 
         setInterval(() => {
             this.setState({...this.state, width: window.innerWidth, height: window.innerHeight});
+        }, 2000);
+
+        setInterval(() => {
+            
         }, 2000);
     }
 
@@ -121,23 +125,24 @@ class Board extends React.Component {
     }
 
     render() {
+        const map = this.props.gameData.puzzleState;
         return (
             <center>
             <table className="grid">
                 <tr className="board-row">
-                    {this.renderSquare(null)}
-                    {this.renderSquare(1)}
-                    {this.renderSquare(2)}
+                    {this.renderSquare(map[0])}
+                    {this.renderSquare(map[1])}
+                    {this.renderSquare(map[2])}
                 </tr>
                 <tr className="board-row">
-                    {this.renderSquare(3)}
-                    {this.renderSquare(4)}
-                    {this.renderSquare(5)}
+                    {this.renderSquare(map[3])}
+                    {this.renderSquare(map[4])}
+                    {this.renderSquare(map[5])}
                 </tr>
                 <tr className="board-row">
-                    {this.renderSquare(6)}
-                    {this.renderSquare(7)}
-                    {this.renderSquare(8)}
+                    {this.renderSquare(map[6])}
+                    {this.renderSquare(map[7])}
+                    {this.renderSquare(map[8])}
                 </tr>
             </table>
             </center>
@@ -148,11 +153,13 @@ class Board extends React.Component {
 class Game extends React.Component {
     constructor(props) {
         super(props);
-        this.state = {hasLocation: false};
+        this.state = {hasLocation: false, serverData: {
+            puzzleState: [7,4,3,1,5,2,8,0,6]
+        }};
 
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(position => {
-                this.setState({coords: position.coords, hasLocation: true});
+                this.setState({...this.state, coords: position.coords, hasLocation: true});
             });
         } else {
             this.setState({hasLocation: false});
@@ -167,7 +174,7 @@ class Game extends React.Component {
                 ? <p> Location: {this.state.coords.latitude}, {this.state.coords.longitude} </p> 
                 : <p> Location unavailable! </p> }    
                 
-                <Board />
+                <Board gameData={this.state.serverData}/>
             </div>
         );
     }
