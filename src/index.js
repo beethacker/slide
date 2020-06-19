@@ -2,8 +2,16 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 
-let imgHome = "https://beethacker.github.io/slidepuzzle/img/";
+let PRODUCTION = false;
 
+let imgHome = "https://beethacker.github.io/slidepuzzle/img/";
+let DEBUG_POSITIONS = false;
+let DEBUG_CELL_OVERLAY = false;
+
+if (PRODUCTION) {
+    DEBUG_POSITIONS = false;
+    DEBUG_CELL_OVERLAY = false;
+}
 
 /*
 Latitude: 1 deg = 110.574 km
@@ -71,21 +79,23 @@ function Square(props) {
         const dy = kmToLat(props.geoUser[1] - props.geoCenter[1]);
         let distKM = Math.sqrt(dx*dx + dy*dy);
         //Unit vector for users direction from cell center
-        const nx = dx / distKM;
-        const ny = dy / distKM;
+        let nx = 0;
+        let ny = 0;
+        if (distKM > 0.0001) {
+            nx = dx / distKM;
+            ny = dy / distKM;
+        }
         //Determin if we're in the inner ring
         const cutDist = props.geoCenter[2];
         const r = 30; //PIXEL RADIUS of ring
         let s;        //scale km to pixels
         if (distKM < cutDist) {
-            console.log("In radius! Cutoff is " + cutDist + ", dist is" + distKM);
             //We're drawing the inner circle as 30px radius.
             //TODO Is that appropriate on mobile? Maybe we generate those in code.            
             s = r*(distKM / cutDist);
             active = true;
         }
         else {
-            console.log("outer radius! Cutoff is " + cutDist + ", dist is" + distKM);
             //Otherwise, we want to lerp (cutDist, dist ,maxDist) --> (30, ,h/2);
             const r = 30;
             const maxDist = props.geoCenter[3];
@@ -95,7 +105,7 @@ function Square(props) {
         //Coordinates of user dot
         ux = cx + s * nx;
         uy = cy + s * ny;
-        
+
         overlay = <>
         <div className="circle" />
         <OverlayCircle className="user-circle" x={ux} y={uy} active={active} inCell={inCell}/>
@@ -114,10 +124,12 @@ function Square(props) {
     const x = index % props.rows;
     const y = Math.floor(index / props.rows);
     const dist = geoDistance(props.geoCenter, props.geoUser);
-
+    const debugOverlay = DEBUG_CELL_OVERLAY
+        ? <span style={{position: "absolute", color: "white", backgroundColor: "black"}}> {props.geoCenter.toString() + " ==> " + dist + ", in=" + inCell} </span>
+        : null;
     return (
         <td className={classes} onClick={() => props.handleClick()} style={{"width": props.w, "height": props.h}}>
-            <span style={{position: "absolute", color: "white", backgroundColor: "black"}}> {props.geoCenter.toString() + " ==> " + dist + ", in=" + inCell} </span>
+            {debugOverlay}
             {overlay}        
             <CroppedImage w={props.cols*props.w} h={props.rows*props.h} sx={x*props.w} sy={y*props.h} inCell={inCell}/>
         </td>
@@ -130,7 +142,9 @@ class Board extends React.Component {
         var x = 3;
         var y = 3;
 
-        this.state = { squares: this.props.gameData.puzzleState.map( i => i === 0 ? null : i ), cols: x, rows: y, width: window.innerWidth, height: window.innerHeight };
+        //TODO get this from local storage, or scramble a new one
+        let puzzleState = [7,null,3,1,5,2,8,6,4];
+        this.state = { squares: puzzleState, cols: x, rows: y, width: window.innerWidth, height: window.innerHeight };
 
         setInterval(() => {
             this.setState({...this.state, width: window.innerWidth, height: window.innerHeight});
@@ -169,10 +183,11 @@ class Board extends React.Component {
 
     neighborsOf(i) {
         var result = [];
-        var w = this.state.width;
-        var row = Math.floor(i / this.state.width);
+        var w = this.state.rows;
+        var row = Math.floor(i / this.state.rows);
 
         //Down one row
+        console.log("w  and len" + [w, this.state.squares.length]);
         if (i + w < this.state.squares.length) {
             result.push(i + w)
         }
@@ -256,11 +271,21 @@ class Board extends React.Component {
     }
 }
 
+function DebugCoords(props) {
+    return (
+        <fieldset>
+            <legend> Debug Coordinates </legend>
+            <input value={props.coords[0] + ", " + props.coords[1]} onChange={props.onChange} style={{width: "100%"}}/>            
+        </fieldset>
+    )
+}
+
 class Game extends React.Component {
     constructor(props) {
         super(props);
-        this.state = {hasLocation: false, serverData: {
-            puzzleState: [7,0,3,1,5,2,8,6,4],
+        this.state = {hasLocation: false, 
+            coords: [44, -63],
+            serverData: {
             cells: [
                 [44.662461, -63.603948, 0.075, 0.5],  //Agricola
                 [44.664109, -63.601264, 0.075, 0.5],  //Novalea
@@ -281,18 +306,23 @@ class Game extends React.Component {
                 this.setState({...this.state, coords: [position.coords.latitude, position.coords.longitude], hasLocation: true});
             });
         } else {
-            this.setState({hasLocation: false});
+            this.setState({...this.state, hasLocation: false});
         }
+
+        this.debugChangeCoord = this.debugChangeCoord.bind(this);
+    }
+
+    debugChangeCoord(e) {
+        console.log("Trying to change it...");
+        let newCoords = this.state.coords.slice();
+        newCoords = e.target.value.split(",").map(f => parseFloat(f));
+        this.setState({...this.state, coords: newCoords});
     }
 
     render() {
         return (
-            <div>
-                <div className="circle"/>
-                { this.state.hasLocation 
-                ? <p> Location: {this.state.coords[0]}, {this.state.coords[1]} </p> 
-                : <p> Location unavailable! </p> }    
-                
+            <div> 
+                { DEBUG_POSITIONS ? <DebugCoords coords={this.state.coords} onChange={this.debugChangeCoord}/> : null }
                 <Board gameData={this.state.serverData} geoUser={this.state.coords} hasLocation={this.state.hasLocation}/>
             </div>
         );
