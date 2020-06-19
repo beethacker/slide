@@ -38,15 +38,19 @@ body {
     position: relative;
   }
 
-  .circle {
+  .user-circle {
     position: absolute;
     border-radius: 50%;
-    background-color: lawngreen;
+    background-color: #eaa;
     z-index: 5;
     left: -10px;
     top: -10px;
     width: 20px;
     height: 20px;
+  }
+
+  .user-circle.active {
+    background-color: lawngreen;
   }
 
   .center-circle {
@@ -64,5 +68,5 @@ body {
   .center-circle.active {
      opacity: 1;
      border-width: 4px;
-     border-color: #06a;
+     border-color: lawngreen;
   }

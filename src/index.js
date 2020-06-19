@@ -13,24 +13,31 @@ function geoDistance(a, b) {
     if (typeof a === 'undefined' || typeof b === 'undefined') {
         return null;
     } 
-    const latRadians = a[0] * Math.PI / 180;
-
-    const kmLat = 110.574 * Math.abs(a[0] - b[0]);
-    const kmLng = 111.32 * Math.abs(a[1] - b[1]) * Math.cos(latRadians);
+    const kmLat = kmToLat(a[1] - b[1]);
+    const kmLng = kmToLong(a[0] - b[0], a[1]);
 
     const km = Math.sqrt(kmLat * kmLat + kmLng * kmLng);
     return km;
+}
+
+function kmToLat(a) {
+    return 110.574*Math.abs(a);
+}
+
+function kmToLong(a, lat) {
+    const latRadians = lat*Math.PI / 180;
+    return 111.32 * Math.abs(a) * Math.cos(latRadians);
 }
 
 function makeTranslateStyle(x, y) {
     return {transform: `translate(${x}px, ${y}px)`};
 }
 
-function CenterCircle(props) {
+function OverlayCircle(props) {
     if (!props.inCell) {
         return <></>;
     }
-    let className = "center-circle"; 
+    let className = props.className; 
     if (props.active) {
         className += " active";
     } 
@@ -48,14 +55,51 @@ function CroppedImage(props) {
 
 function Square(props) {
     const index = props.value;
-    const active = false;
-    const inCell = props.isNearest;
+    let active = false;
+    const inCell = props.isNearest;// || (typeof props.geoUser !== undefined);
     let classes = inCell ? "square selected" : "square";
     let overlay = null;
     if (inCell) {
+        //User coordinates that we'll calculate!
+        let ux;
+        let uy;        
+        //Cell center!
+        const cx = 0.5*props.w;
+        const cy = 0.5*props.h;
+        //User coordinate delta (in km) from cell center
+        const dx = kmToLong(props.geoUser[0] - props.geoCenter[0], props.geoUser[1]);
+        const dy = kmToLat(props.geoUser[1] - props.geoCenter[1]);
+        let distKM = Math.sqrt(dx*dx + dy*dy);
+        //Unit vector for users direction from cell center
+        const nx = dx / distKM;
+        const ny = dy / distKM;
+        //Determin if we're in the inner ring
+        const cutDist = props.geoCenter[2];
+        const r = 30; //PIXEL RADIUS of ring
+        let s;        //scale km to pixels
+        if (distKM < cutDist) {
+            console.log("In radius! Cutoff is " + cutDist + ", dist is" + distKM);
+            //We're drawing the inner circle as 30px radius.
+            //TODO Is that appropriate on mobile? Maybe we generate those in code.            
+            s = r*(distKM / cutDist);
+            active = true;
+        }
+        else {
+            console.log("outer radius! Cutoff is " + cutDist + ", dist is" + distKM);
+            //Otherwise, we want to lerp (cutDist, dist ,maxDist) --> (30, ,h/2);
+            const r = 30;
+            const maxDist = props.geoCenter[3];
+            distKM = Math.min(distKM, maxDist); //Don't draw OUTSIDE of cell
+            s = ((distKM - cutDist) / (maxDist - cutDist)) * (props.h / 2 - r) + r;
+        }
+        //Coordinates of user dot
+        ux = cx + s * nx;
+        uy = cy + s * ny;
+        
         overlay = <>
         <div className="circle" />
-        <CenterCircle x={0.5*props.w} y={0.5*props.h} active={active} inCell={inCell}/>
+        <OverlayCircle className="user-circle" x={ux} y={uy} active={active} inCell={inCell}/>
+        <OverlayCircle className="center-circle" x={cx} y={cy} active={active} inCell={inCell}/>
         </>
     }
 
@@ -73,7 +117,7 @@ function Square(props) {
 
     return (
         <td className={classes} onClick={() => props.handleClick()} style={{"width": props.w, "height": props.h}}>
-            <span style={{position: "absolute", color: "white", backgroundColor: "black"}}> {props.geoCenter.toString() + " ==> " + dist} </span>
+            <span style={{position: "absolute", color: "white", backgroundColor: "black"}}> {props.geoCenter.toString() + " ==> " + dist + ", in=" + inCell} </span>
             {overlay}        
             <CroppedImage w={props.cols*props.w} h={props.rows*props.h} sx={x*props.w} sy={y*props.h} inCell={inCell}/>
         </td>
@@ -86,15 +130,7 @@ class Board extends React.Component {
         var x = 3;
         var y = 3;
 
-        var nearest = -1;
-        var distanceList = [];
-        if (this.props.hasLocation) {
-            distanceList = props.serverData.cells.map(cell => geoDistance(this.props.geoUser, cell));
-            console.log(distanceList);
-            nearest = this.minIndex(distanceList)[0];
-        }
-
-        this.state = { squares: this.props.gameData.puzzleState.map( i => i === 0 ? null : i ), cols: x, rows: y, width: window.innerWidth, height: window.innerHeight, nearest: nearest };
+        this.state = { squares: this.props.gameData.puzzleState.map( i => i === 0 ? null : i ), cols: x, rows: y, width: window.innerWidth, height: window.innerHeight };
 
         setInterval(() => {
             this.setState({...this.state, width: window.innerWidth, height: window.innerHeight});
@@ -165,7 +201,7 @@ class Board extends React.Component {
         this.setState({...this.state, squares: squares });
     }
 
-    renderSquare(i) {
+    renderSquare(i, nearest) {
         const aspect = 4/3;
         let width = 0.9*(window.innerWidth) / 3;
         let height = 0.9*(window.innerHeight) / 3;
@@ -177,7 +213,7 @@ class Board extends React.Component {
         }
         return <Square
         value={this.state.squares[i]} 
-        isNearest={i === this.state.nearest}
+        isNearest={i === nearest}
         geoUser={this.props.geoUser}
         geoCenter={this.props.gameData.cells[i]}
         handleClick={() => this.handleClick(i)} 
@@ -189,23 +225,30 @@ class Board extends React.Component {
     }
 
     render() {
+        var nearest = -1;
+        var distanceList = [];
+        if (this.props.hasLocation) {
+            distanceList = this.props.gameData.cells.map(cell => geoDistance(this.props.geoUser, cell));
+            nearest = this.minIndex(distanceList)[0];
+        }
+
         return (
             <center>
             <table className="grid">
                 <tr className="board-row">
-                    {this.renderSquare(0)}
-                    {this.renderSquare(1)}
-                    {this.renderSquare(2)}
+                    {this.renderSquare(0, nearest)}
+                    {this.renderSquare(1, nearest)}
+                    {this.renderSquare(2, nearest)}
                 </tr>
                 <tr className="board-row">
-                    {this.renderSquare(3)}
-                    {this.renderSquare(4)}
-                    {this.renderSquare(5)}
+                    {this.renderSquare(3, nearest)}
+                    {this.renderSquare(4, nearest)}
+                    {this.renderSquare(5, nearest)}
                 </tr>
                 <tr className="board-row">
-                    {this.renderSquare(6)}
-                    {this.renderSquare(7)}
-                    {this.renderSquare(8)}
+                    {this.renderSquare(6, nearest)}
+                    {this.renderSquare(7, nearest)}
+                    {this.renderSquare(8, nearest)}
                 </tr>
             </table>
             </center>
@@ -217,19 +260,19 @@ class Game extends React.Component {
     constructor(props) {
         super(props);
         this.state = {hasLocation: false, serverData: {
-            puzzleState: [7,4,3,1,5,2,8,0,6],
+            puzzleState: [7,0,3,1,5,2,8,6,4],
             cells: [
-                [44.662461, -63.603948],  //Agricola
-                [44.664109, -63.601264],  //Novalea
-                [44.666200, -63.600276],  //Stairs
+                [44.662461, -63.603948, 0.075, 0.5],  //Agricola
+                [44.664109, -63.601264, 0.075, 0.5],  //Novalea
+                [44.666200, -63.600276, 0.075, 0.5],  //Stairs
 
-                [44.659729, -63.602380],   //Rbboie
-                [44.661274, -63.600525],   //home
-                [44.664368, -63.595637],   //Devonshire
+                [44.659729, -63.602380, 0.075, 0.5],   //Rbboie
+                [44.661985, -63.598293, 0.075, 0.5],   //home  
+                [44.664368, -63.595637, 0.075, 0.5],   //Devonshire
 
-                [44.657439, -63.598772],   //Robbie almon
-                [44.659897, -63.595294],   //Gottigen almon
-                [44.662278, -63.591474]    //Barrington
+                [44.657439, -63.598772, 0.075, 0.5],   //Robbie almon
+                [44.659897, -63.595294, 0.075, 0.5],   //Gottigen almon 
+                [44.662278, -63.591474, 0.075, 0.5]    //Barrington
              ]
         }};
 
@@ -250,7 +293,7 @@ class Game extends React.Component {
                 ? <p> Location: {this.state.coords[0]}, {this.state.coords[1]} </p> 
                 : <p> Location unavailable! </p> }    
                 
-                <Board gameData={this.state.serverData} geoUser={this.state.coords}/>
+                <Board gameData={this.state.serverData} geoUser={this.state.coords} hasLocation={this.state.hasLocation}/>
             </div>
         );
     }
