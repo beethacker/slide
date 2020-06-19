@@ -5,12 +5,16 @@ import './index.css';
 let PRODUCTION = false;
 
 let imgHome = "https://beethacker.github.io/slidepuzzle/img/";
-let DEBUG_POSITIONS = false;
+let DEBUG_POSITIONS = true;
 let DEBUG_CELL_OVERLAY = false;
+let DEBUG_DISABLE_MOVE_CHECK = false;
+let DEBUG_SHOW_STATE = true;
 
 if (PRODUCTION) {
     DEBUG_POSITIONS = false;
     DEBUG_CELL_OVERLAY = false;
+    DEBUG_DISABLE_MOVE_CHECK = false;
+    DEBUG_SHOW_STATE = false;
 }
 
 /*
@@ -143,7 +147,7 @@ class Board extends React.Component {
         var y = 3;
 
         //TODO get this from local storage, or scramble a new one
-        let puzzleState = [7,null,3,1,5,2,8,6,4];
+        let puzzleState = [1, null, 2, 3, 4, 5, 6, 7, 8];
         this.state = { squares: puzzleState, cols: x, rows: y, width: window.innerWidth, height: window.innerHeight };
 
         setInterval(() => {
@@ -207,11 +211,26 @@ class Board extends React.Component {
         return result;
     }
     
-    handleClick(i) {
+    handleClick(index) {
+        this.updateNearest();
         const squares = this.state.squares.slice();
 
-        var neighbors = this.neighborsOf(i);
-        alert(neighbors);
+        let neighbors = this.neighborsOf(index);
+       // alert(neighbors);
+
+        //TODO need to check if move is allowed!!!
+        const moveAllowed = DEBUG_DISABLE_MOVE_CHECK || (index === this.nearest);
+
+        if (moveAllowed) {
+            for (let i = 0; i < neighbors.length; i++) {
+                if (squares[neighbors[i]] == null) {
+                    console.log("Found a match! Can move " + index + " to " + neighbors[i]);
+                    squares[neighbors[i]] = squares[index];
+                    squares[index] = null;
+                    break;
+                }
+            }
+        }
 
         this.setState({...this.state, squares: squares });
     }
@@ -228,7 +247,7 @@ class Board extends React.Component {
         }
         return <Square
         value={this.state.squares[i]} 
-        isNearest={i === nearest}
+        isNearest={i === this.nearest}
         geoUser={this.props.geoUser}
         geoCenter={this.props.gameData.cells[i]}
         handleClick={() => this.handleClick(i)} 
@@ -239,31 +258,34 @@ class Board extends React.Component {
         />;
     }
 
-    render() {
-        var nearest = -1;
+    updateNearest() {
+        this.nearest = -1;
         var distanceList = [];
         if (this.props.hasLocation) {
             distanceList = this.props.gameData.cells.map(cell => geoDistance(this.props.geoUser, cell));
-            nearest = this.minIndex(distanceList)[0];
+            this.nearest = this.minIndex(distanceList)[0];
         }
+    }
 
+    render() {
+        this.updateNearest();
         return (
             <center>
             <table className="grid">
                 <tr className="board-row">
-                    {this.renderSquare(0, nearest)}
-                    {this.renderSquare(1, nearest)}
-                    {this.renderSquare(2, nearest)}
+                    {this.renderSquare(0)}
+                    {this.renderSquare(1)}
+                    {this.renderSquare(2)}
                 </tr>
                 <tr className="board-row">
-                    {this.renderSquare(3, nearest)}
-                    {this.renderSquare(4, nearest)}
-                    {this.renderSquare(5, nearest)}
+                    {this.renderSquare(3)}
+                    {this.renderSquare(4)}
+                    {this.renderSquare(5)}
                 </tr>
                 <tr className="board-row">
-                    {this.renderSquare(6, nearest)}
-                    {this.renderSquare(7, nearest)}
-                    {this.renderSquare(8, nearest)}
+                    {this.renderSquare(6)}
+                    {this.renderSquare(7)}
+                    {this.renderSquare(8)}
                 </tr>
             </table>
             </center>
