@@ -97,7 +97,7 @@ function Square(props) {
         <td className={classes} onClick={() => props.handleClick()} style={{"width": props.w, "height": props.h}}>
             {debugOverlay}
             {overlay}        
-            <CroppedImage w={props.cols*props.w} h={props.rows*props.h} sx={x*props.w} sy={y*props.h} inCell={inCell}/>
+            <CroppedImage img={props.img} w={props.cols*props.w} h={props.rows*props.h} sx={x*props.w} sy={y*props.h} inCell={inCell}/>
         </td>
     );
 }

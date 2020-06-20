@@ -8,14 +8,15 @@ import Square from './square.js';
 let imgHome = "https://beethacker.github.io/slidepuzzle/img/";
 let jsonHome = "https://beethacker.github.io/slidepuzzle/json/";
 
-
 //Hack to make json files fetchable locally. Not sure how to set up node/webpack/whatever for this
 //so I'll just make them available with a separate python server. 
 if (DEBUG("LOCAL_SERVER")) {
     //NOTE! In order for fetch to work, we couldn't just say http://localhost:8000/json/
     //here. Instead, we had to set http://localhost as a proxy in package.json.
-    jsonHome = "/json/";
-    imgHome = "/img/";
+    //NOPE! Still can't get it to work? :( Just push stuff to github pages then.
+    //Oh wait, maybe it WAS working, but I was just parsing json wrong????
+    //jsonHome = "/json/";
+    //imgHome = "/img/";
 }
 
 class Board extends React.Component {
@@ -29,7 +30,7 @@ class Board extends React.Component {
         this.state = { squares: puzzleState, cols: x, rows: y, width: window.innerWidth, height: window.innerHeight };
 
         setInterval(() => {
-            this.setState({...this.state, width: window.innerWidth, height: window.innerHeight});
+            this.setState({width: window.innerWidth, height: window.innerHeight});
         }, 2000);
 
         setInterval(() => {
@@ -124,6 +125,7 @@ class Board extends React.Component {
             height = width / aspect;
         }
         return <Square
+        img={imgHome + this.props.gameData.img}
         value={this.state.squares[i]} 
         isNearest={i === this.nearest}
         geoUser={this.props.geoUser}
@@ -194,17 +196,13 @@ class Game extends React.Component {
 
         if (puzzle.length > 0) {
             const json = jsonHome + puzzle + ".json";
-            console.log("Fetch from: " + json);
             fetch(json)
-            .then( (val) => {
-                console.log("About to parse: " + val);
-                let parse = JSON.parse(val);
-                console.log("TEST:" + parse);
-                this.setState({ serverData : JSON.parse(val) });
-            })
+            .then( response => response.json())
+            .then( data => this.setState({ serverData : data }))        
             .catch( (err) => this.setState({ fetchError: "Failed to fetch: " + json }));
         }
 
+        //TODO need to update this often!
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(position => {
                 this.setState({coords: [position.coords.latitude, position.coords.longitude], hasLocation: true});
