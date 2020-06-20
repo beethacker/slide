@@ -4,10 +4,11 @@ let PRODUCTION = false;
 
 //Some debugging options
 let DEBUG_FLAGS = {
-    SET_GPS: true,
+    CLEAR_STATE: false,
+    SET_GPS: false,
     CELL_OVERAL: false,
     DISABLE_MOVE_CHECK: false,
-    LOCAL_SERVER: true
+    LOCAL_SERVER: false
 };
 
 

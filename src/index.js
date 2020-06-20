@@ -19,15 +19,28 @@ if (DEBUG("LOCAL_SERVER")) {
     //imgHome = "/img/";
 }
 
+if (DEBUG("CLEAR_STATE")) {
+    localStorage.clear();
+}
+
 class Board extends React.Component {
     constructor(props) {
         super(props);
-        var x = 3;
-        var y = 3;
 
+        //Look for existing local storage...
+        let savedState = localStorage[this.props.puzzleName];
+        let puzzleState; 
+        if (savedState) {
+            puzzleState = savedState.split(",").map(n => Number(n));
+        }
+        else {
+            //TODO support for larger puzzles!
+            puzzleState = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+            this.scramble(puzzleState);
+            localStorage[this.props.puzzleName] = puzzleState;
+        }
         //TODO get this from local storage, or scramble a new one
-        let puzzleState = [1, null, 2, 3, 4, 5, 6, 7, 8];
-        this.state = { squares: puzzleState, cols: x, rows: y, width: window.innerWidth, height: window.innerHeight };
+        this.state = { squares: puzzleState, width: window.innerWidth, height: window.innerHeight };
 
         setInterval(() => {
             this.setState({width: window.innerWidth, height: window.innerHeight});
@@ -66,12 +79,15 @@ class Board extends React.Component {
 
     neighborsOf(i) {
         var result = [];
-        var w = this.state.rows;
-        var row = Math.floor(i / this.state.rows);
+        const w = this.props.serverData.gridsize[0];
+        const h = this.props.serverData.gridsize[1];
+        const row = Math.floor(i / w);
+        const size = w * h;
+
+        //console.log(`i=${i}, w=${w}, row=${row}, size=${size}`);
 
         //Down one row
-        console.log("w  and len" + [w, this.state.squares.length]);
-        if (i + w < this.state.squares.length) {
+        if (i + w < size) {
             result.push(i + w)
         }
         //Up one 
@@ -89,33 +105,44 @@ class Board extends React.Component {
 
         return result;
     }
+
+    scramble(puzzle) {
+        for (let iterations = 0; iterations < 50; iterations++) {
+            console.log(puzzle);
+            const zeroIndex = puzzle.indexOf(0);
+            const neighborIndices = this.neighborsOf(zeroIndex);
+            const randomNeighbor = neighborIndices[Math.floor(Math.random()*neighborIndices.length)];
+            puzzle[zeroIndex] = puzzle[randomNeighbor];
+            puzzle[randomNeighbor] = 0;
+        }
+    }
     
     handleClick(index) {
         this.updateNearest();
         const squares = this.state.squares.slice();
 
         let neighbors = this.neighborsOf(index);
-       // alert(neighbors);
 
         //TODO need to check if move is allowed!!!
         const moveAllowed = DEBUG("DISABLE_MOVE_CHECK") || (index === this.nearest);
 
         if (moveAllowed) {
             for (let i = 0; i < neighbors.length; i++) {
-                if (squares[neighbors[i]] == null) {
+                if (squares[neighbors[i]] === 0) {
                     squares[neighbors[i]] = squares[index];
-                    squares[index] = null;
+                    squares[index] = 0;
                     break;
                 }
             }
         }
 
+        localStorage[this.props.puzzleName] = squares;
         this.setState({squares: squares });
     }
 
     renderSquare(i, nearest) {
-        const imSize = this.props.gameData.imgsize;    
-        const gridSize = this.props.gameData.gridsize;    
+        const imSize = this.props.serverData.imgsize;    
+        const gridSize = this.props.serverData.gridsize;    
         const aspect = imSize[0] / imSize[1];
         let width = 0.9*(window.innerWidth) / gridSize[0];
         let height = 0.9*(window.innerHeight) / gridSize[1];
@@ -126,16 +153,16 @@ class Board extends React.Component {
             height = width / aspect;
         }
         return <Square
-        img={imgHome + this.props.gameData.img}
+        img={imgHome + this.props.serverData.img}
         value={this.state.squares[i]} 
         isNearest={i === this.nearest}
         geoUser={this.props.geoUser}
-        geoCenter={this.props.gameData.cells[i]}
+        geoCenter={this.props.serverData.cells[i]}
         handleClick={() => this.handleClick(i)} 
         w = {width}
         h = {height}
-        rows = {this.state.rows}
-        cols = {this.state.cols}
+        rows = {this.props.serverData.gridsize[0]}
+        cols = {this.props.serverData.gridsize[1]}
         />;
     }
 
@@ -143,7 +170,7 @@ class Board extends React.Component {
         this.nearest = -1;
         var distanceList = [];
         if (this.props.hasLocation) {
-            distanceList = this.props.gameData.cells.map(cell => Geo.distanceInKm(this.props.geoUser, cell));
+            distanceList = this.props.serverData.cells.map(cell => Geo.distanceInKm(this.props.geoUser, cell));
             this.nearest = this.minIndex(distanceList)[0];
         }
     }
@@ -188,6 +215,8 @@ class Game extends React.Component {
         super(props);
 
         let puzzle = window.location.pathname.substr(1);
+        //TODO need to pull this from local storage to
+        // fake routing on github pages!
 
         this.state = {hasLocation: false, 
             coords: [44, -63],
@@ -230,7 +259,7 @@ class Game extends React.Component {
         return (
             <div> 
                 { DEBUG("SET_GPS") ? <DebugCoords coords={this.state.coords} onChange={this.debugChangeCoord}/> : null }
-                <Board gameData={this.state.serverData} geoUser={this.state.coords} hasLocation={this.state.hasLocation}/>
+                <Board puzzleName={this.state.puzzle} serverData={this.state.serverData} geoUser={this.state.coords} hasLocation={this.state.hasLocation}/>
             </div>
         );
     }
