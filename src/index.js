@@ -103,7 +103,6 @@ class Board extends React.Component {
         if (moveAllowed) {
             for (let i = 0; i < neighbors.length; i++) {
                 if (squares[neighbors[i]] == null) {
-                    console.log("Found a match! Can move " + index + " to " + neighbors[i]);
                     squares[neighbors[i]] = squares[index];
                     squares[index] = null;
                     break;
@@ -111,13 +110,15 @@ class Board extends React.Component {
             }
         }
 
-        this.setState({...this.state, squares: squares });
+        this.setState({squares: squares });
     }
 
     renderSquare(i, nearest) {
-        const aspect = 4/3;
-        let width = 0.9*(window.innerWidth) / 3;
-        let height = 0.9*(window.innerHeight) / 3;
+        const imSize = this.props.gameData.imgsize;    
+        const gridSize = this.props.gameData.gridsize;    
+        const aspect = imSize[0] / imSize[1];
+        let width = 0.9*(window.innerWidth) / gridSize[0];
+        let height = 0.9*(window.innerHeight) / gridSize[1];
         if (width / height > aspect) {
             width = height * aspect;
         }
