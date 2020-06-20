@@ -1,157 +1,21 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-
-let PRODUCTION = false;
+import * as Geo from './geo.js';
+import DEBUG from './debug.js'; 
+import Square from './square.js';
 
 let imgHome = "https://beethacker.github.io/slidepuzzle/img/";
 let jsonHome = "https://beethacker.github.io/slidepuzzle/json/";
 
-//Some debugging options
-let DEBUG_FLAGS = {
-    SET_GPS: true,
-    CELL_OVERAL: false,
-    DISABLE_MOVE_CHECK: false,
-    LOCAL_JSON: true
-};
-
-//If I set production, force all debug options off
-if (PRODUCTION) {
-    for(let key of Object.keys(DEBUG_FLAGS)) {
-        DEBUG_FLAGS[key] = false;
-    }
-}
 
 //Hack to make json files fetchable locally. Not sure how to set up node/webpack/whatever for this
 //so I'll just make them available with a separate python server. 
-if (DEBUG_FLAGS["LOCAL_SERVER"]) {
+if (DEBUG("LOCAL_SERVER")) {
     //NOTE! In order for fetch to work, we couldn't just say http://localhost:8000/json/
     //here. Instead, we had to set http://localhost as a proxy in package.json.
     jsonHome = "/json/";
     imgHome = "/img/";
-}
-
-/*
-Latitude: 1 deg = 110.574 km
-Longitude: 1 deg = 111.320*cos(latitude) km
-*/
-function geoDistance(a, b) {
-    if (typeof a === 'undefined' || typeof b === 'undefined') {
-        return null;
-    } 
-    const kmLat = kmToLat(a[1] - b[1]);
-    const kmLng = kmToLong(a[0] - b[0], a[1]);
-
-    const km = Math.sqrt(kmLat * kmLat + kmLng * kmLng);
-    return km;
-}
-
-function kmToLat(a) {
-    return 110.574*Math.abs(a);
-}
-
-function kmToLong(a, lat) {
-    const latRadians = lat*Math.PI / 180;
-    return 111.32 * Math.abs(a) * Math.cos(latRadians);
-}
-
-function makeTranslateStyle(x, y) {
-    return {transform: `translate(${x}px, ${y}px)`};
-}
-
-function OverlayCircle(props) {
-    if (!props.inCell) {
-        return <></>;
-    }
-    let className = props.className; 
-    if (props.active) {
-        className += " active";
-    } 
-    return <div className={className} style={makeTranslateStyle(props.x, props.y)}></div>
-}
-
-function CroppedImage(props) {
-    return <img src={imgHome + "camping.jpg"} alt="stub" style={{
-                "marginTop" : -props.sy + "px",
-                "width": props.w + "px",
-                "height" : props.h + "px",
-                "marginLeft": -props.sx + "px",
-            }}/>
-}
-
-function Square(props) {
-    const index = props.value;
-    let active = false;
-    const inCell = props.isNearest;// || (typeof props.geoUser !== undefined);
-    let classes = inCell ? "square selected" : "square";
-    let overlay = null;
-    if (inCell) {
-        //User coordinates that we'll calculate!
-        let ux;
-        let uy;        
-        //Cell center!
-        const cx = 0.5*props.w;
-        const cy = 0.5*props.h;
-        //User coordinate delta (in km) from cell center
-        const dx = kmToLong(props.geoUser[0] - props.geoCenter[0], props.geoUser[1]);
-        const dy = kmToLat(props.geoUser[1] - props.geoCenter[1]);
-        let distKM = Math.sqrt(dx*dx + dy*dy);
-        //Unit vector for users direction from cell center
-        let nx = 0;
-        let ny = 0;
-        if (distKM > 0.0001) {
-            nx = dx / distKM;
-            ny = dy / distKM;
-        }
-        //Determin if we're in the inner ring
-        const cutDist = props.geoCenter[2];
-        const r = 30; //PIXEL RADIUS of ring
-        let s;        //scale km to pixels
-        if (distKM < cutDist) {
-            //We're drawing the inner circle as 30px radius.
-            //TODO Is that appropriate on mobile? Maybe we generate those in code.            
-            s = r*(distKM / cutDist);
-            active = true;
-        }
-        else {
-            //Otherwise, we want to lerp (cutDist, dist ,maxDist) --> (30, ,h/2);
-            const r = 30;
-            const maxDist = props.geoCenter[3];
-            distKM = Math.min(distKM, maxDist); //Don't draw OUTSIDE of cell
-            s = ((distKM - cutDist) / (maxDist - cutDist)) * (props.h / 2 - r) + r;
-        }
-        //Coordinates of user dot
-        ux = cx + s * nx;
-        uy = cy + s * ny;
-
-        overlay = <>
-        <div className="circle" />
-        <OverlayCircle className="user-circle" x={ux} y={uy} active={active} inCell={inCell}/>
-        <OverlayCircle className="center-circle" x={cx} y={cy} active={active} inCell={inCell}/>
-        </>
-    }
-
-    if (!index) {
-        return (
-            <td className="square empty" style={{"width": props.w, "height": props.h}}>
-                {overlay}
-            </td>
-        );
-    }
-
-    const x = index % props.rows;
-    const y = Math.floor(index / props.rows);
-    const dist = geoDistance(props.geoCenter, props.geoUser);
-    const debugOverlay = DEBUG_FLAGS["CELL_OVERLAY"]
-        ? <span style={{position: "absolute", color: "white", backgroundColor: "black"}}> {props.geoCenter.toString() + " ==> " + dist + ", in=" + inCell} </span>
-        : null;
-    return (
-        <td className={classes} onClick={() => props.handleClick()} style={{"width": props.w, "height": props.h}}>
-            {debugOverlay}
-            {overlay}        
-            <CroppedImage w={props.cols*props.w} h={props.rows*props.h} sx={x*props.w} sy={y*props.h} inCell={inCell}/>
-        </td>
-    );
 }
 
 class Board extends React.Component {
@@ -233,7 +97,7 @@ class Board extends React.Component {
        // alert(neighbors);
 
         //TODO need to check if move is allowed!!!
-        const moveAllowed = DEBUG_FLAGS["DISABLE_MOVE_CHECK"] || (index === this.nearest);
+        const moveAllowed = DEBUG("DISABLE_MOVE_CHECK") || (index === this.nearest);
 
         if (moveAllowed) {
             for (let i = 0; i < neighbors.length; i++) {
@@ -276,7 +140,7 @@ class Board extends React.Component {
         this.nearest = -1;
         var distanceList = [];
         if (this.props.hasLocation) {
-            distanceList = this.props.gameData.cells.map(cell => geoDistance(this.props.geoUser, cell));
+            distanceList = this.props.gameData.cells.map(cell => Geo.distanceInKm(this.props.geoUser, cell));
             this.nearest = this.minIndex(distanceList)[0];
         }
     }
@@ -321,57 +185,52 @@ class Game extends React.Component {
         super(props);
 
         let puzzle = window.location.pathname.substr(1);
-//        let serverData = {};
-        console.log("Puzzle:" + puzzle)
-        if (puzzle.length > 0) {
-            const json = jsonHome + `json/${puzzle}.json`;
-            console.log("Fetch from: " + json);
-            fetch(json)
-            .then( (val) => console.log("Fetched: " + val))
-            .catch( (err) => console.log("Fetch error! " + err));
-        }
-        console.log("Probably haven't fetched yet, set state then!");
 
         this.state = {hasLocation: false, 
             coords: [44, -63],
-            serverData: {
-            cells: [
-                [44.662461, -63.603948, 0.075, 0.5],  //Agricola
-                [44.664109, -63.601264, 0.075, 0.5],  //Novalea
-                [44.666200, -63.600276, 0.075, 0.5],  //Stairs
+            serverData: null,
+            puzzle: puzzle
+        };
 
-                [44.659729, -63.602380, 0.075, 0.5],   //Rbboie
-                [44.661985, -63.598293, 0.075, 0.5],   //home  
-                [44.664368, -63.595637, 0.075, 0.5],   //Devonshire
-
-                [44.657439, -63.598772, 0.075, 0.5],   //Robbie almon
-                [44.659897, -63.595294, 0.075, 0.5],   //Gottigen almon 
-                [44.662278, -63.591474, 0.075, 0.5]    //Barrington
-             ]
-        }};
+        if (puzzle.length > 0) {
+            const json = jsonHome + puzzle + ".json";
+            console.log("Fetch from: " + json);
+            fetch(json)
+            .then( (val) => {
+                console.log("About to parse: " + val);
+                let parse = JSON.parse(val);
+                console.log("TEST:" + parse);
+                this.setState({ serverData : JSON.parse(val) });
+            })
+            .catch( (err) => this.setState({ fetchError: "Failed to fetch: " + json }));
+        }
 
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(position => {
-                this.setState({...this.state, coords: [position.coords.latitude, position.coords.longitude], hasLocation: true});
+                this.setState({coords: [position.coords.latitude, position.coords.longitude], hasLocation: true});
             });
         } else {
-            this.setState({...this.state, hasLocation: false});
+            this.setState({hasLocation: false});
         }
 
         this.debugChangeCoord = this.debugChangeCoord.bind(this);
     }
 
     debugChangeCoord(e) {
-        console.log("Trying to change it...");
-        let newCoords = this.state.coords.slice();
-        newCoords = e.target.value.split(",").map(f => parseFloat(f));
-        this.setState({...this.state, coords: newCoords});
+        const newCoords = e.target.value.split(",").map(f => parseFloat(f));
+        this.setState({ coords: newCoords });
     }
 
     render() {
+        if (this.state.fetchError) {
+            return <div> {this.state.fetchError} </div>;
+        }
+        if (this.state.serverData === null) {
+            return <div> Loading...</div>;
+        }
         return (
             <div> 
-                { DEBUG_FLAGS["SET_GPS"] ? <DebugCoords coords={this.state.coords} onChange={this.debugChangeCoord}/> : null }
+                { DEBUG("SET_GPS") ? <DebugCoords coords={this.state.coords} onChange={this.debugChangeCoord}/> : null }
                 <Board gameData={this.state.serverData} geoUser={this.state.coords} hasLocation={this.state.hasLocation}/>
             </div>
         );
