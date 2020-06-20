@@ -1,6 +1,7 @@
 {
   "name": "react-slide",
   "homepage": "http://beethacker.github.io/slidepuzzle",
+  "proxy":"http://localhost:8000",
   "version": "0.1.0",
   "private": true,
   "dependencies": {

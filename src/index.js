@@ -5,16 +5,30 @@ import './index.css';
 let PRODUCTION = false;
 
 let imgHome = "https://beethacker.github.io/slidepuzzle/img/";
-let DEBUG_POSITIONS = true;
-let DEBUG_CELL_OVERLAY = false;
-let DEBUG_DISABLE_MOVE_CHECK = false;
-let DEBUG_SHOW_STATE = true;
+let jsonHome = "https://beethacker.github.io/slidepuzzle/json/";
 
+//Some debugging options
+let DEBUG_FLAGS = {
+    SET_GPS: true,
+    CELL_OVERAL: false,
+    DISABLE_MOVE_CHECK: false,
+    LOCAL_JSON: true
+};
+
+//If I set production, force all debug options off
 if (PRODUCTION) {
-    DEBUG_POSITIONS = false;
-    DEBUG_CELL_OVERLAY = false;
-    DEBUG_DISABLE_MOVE_CHECK = false;
-    DEBUG_SHOW_STATE = false;
+    for(let key of Object.keys(DEBUG_FLAGS)) {
+        DEBUG_FLAGS[key] = false;
+    }
+}
+
+//Hack to make json files fetchable locally. Not sure how to set up node/webpack/whatever for this
+//so I'll just make them available with a separate python server. 
+if (DEBUG_FLAGS["LOCAL_SERVER"]) {
+    //NOTE! In order for fetch to work, we couldn't just say http://localhost:8000/json/
+    //here. Instead, we had to set http://localhost as a proxy in package.json.
+    jsonHome = "/json/";
+    imgHome = "/img/";
 }
 
 /*
@@ -128,7 +142,7 @@ function Square(props) {
     const x = index % props.rows;
     const y = Math.floor(index / props.rows);
     const dist = geoDistance(props.geoCenter, props.geoUser);
-    const debugOverlay = DEBUG_CELL_OVERLAY
+    const debugOverlay = DEBUG_FLAGS["CELL_OVERLAY"]
         ? <span style={{position: "absolute", color: "white", backgroundColor: "black"}}> {props.geoCenter.toString() + " ==> " + dist + ", in=" + inCell} </span>
         : null;
     return (
@@ -219,7 +233,7 @@ class Board extends React.Component {
        // alert(neighbors);
 
         //TODO need to check if move is allowed!!!
-        const moveAllowed = DEBUG_DISABLE_MOVE_CHECK || (index === this.nearest);
+        const moveAllowed = DEBUG_FLAGS["DISABLE_MOVE_CHECK"] || (index === this.nearest);
 
         if (moveAllowed) {
             for (let i = 0; i < neighbors.length; i++) {
@@ -303,8 +317,21 @@ function DebugCoords(props) {
 }
 
 class Game extends React.Component {
-    constructor(props) {
+    constructor(props) {    
         super(props);
+
+        let puzzle = window.location.pathname.substr(1);
+//        let serverData = {};
+        console.log("Puzzle:" + puzzle)
+        if (puzzle.length > 0) {
+            const json = jsonHome + `json/${puzzle}.json`;
+            console.log("Fetch from: " + json);
+            fetch(json)
+            .then( (val) => console.log("Fetched: " + val))
+            .catch( (err) => console.log("Fetch error! " + err));
+        }
+        console.log("Probably haven't fetched yet, set state then!");
+
         this.state = {hasLocation: false, 
             coords: [44, -63],
             serverData: {
@@ -344,7 +371,7 @@ class Game extends React.Component {
     render() {
         return (
             <div> 
-                { DEBUG_POSITIONS ? <DebugCoords coords={this.state.coords} onChange={this.debugChangeCoord}/> : null }
+                { DEBUG_FLAGS["SET_GPS"] ? <DebugCoords coords={this.state.coords} onChange={this.debugChangeCoord}/> : null }
                 <Board gameData={this.state.serverData} geoUser={this.state.coords} hasLocation={this.state.hasLocation}/>
             </div>
         );
