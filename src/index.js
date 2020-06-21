@@ -214,9 +214,18 @@ class Game extends React.Component {
     constructor(props) {    
         super(props);
 
-        let puzzle = window.location.pathname.substr(1);
-        //TODO need to pull this from local storage to
-        // fake routing on github pages!
+        let puzzle = window.location.pathname.slice(1);
+        if (puzzle.startsWith("slidepuzzle")) {
+            puzzle = puzzle.slice(11);
+        }
+        if (puzzle.length <= 0 && "404_hack" in localStorage) {
+            puzzle = localStorage["404_hack"];
+            if (puzzle.startsWith("slidepuzzle")) {
+                puzzle = puzzle.slice(11);
+            }
+            console.log("Reading 404 hack property: " + puzzle);
+            localStorage.removeItem("404_hack");
+        }
 
         this.state = {hasLocation: false, 
             coords: [44, -63],
@@ -231,17 +240,26 @@ class Game extends React.Component {
             .then( data => this.setState({ serverData : data }))        
             .catch( (err) => this.setState({ fetchError: "Failed to fetch: " + json }));
         }
-
-        //TODO need to update this often!
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(position => {
-                this.setState({coords: [position.coords.latitude, position.coords.longitude], hasLocation: true});
-            });
-        } else {
-            this.setState({hasLocation: false});
+        else {
+            this.setState({fetchError: "!Main Page!"});
         }
 
+        this.updateGeoLocation();
+        setInterval(() => {
+            this.updateGeoLocation();
+        }, 15*1000);
+        
         this.debugChangeCoord = this.debugChangeCoord.bind(this);
+    }
+
+    updateGeoLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(position => {
+                this.setState({ coords: [position.coords.latitude, position.coords.longitude], hasLocation: true });
+            });
+        } else {
+            this.setState({ hasLocation: false });
+        }
     }
 
     debugChangeCoord(e) {

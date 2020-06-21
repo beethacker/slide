@@ -5,7 +5,9 @@
 
             </p>
         <script>
-            console.log("Hello! Script!");
+            var path = window.location.pathname.slice(1);
+            localStorage.setItem('404_hack', path);
+            window.location.href='../';
         </script>
     </body>
 </html>
