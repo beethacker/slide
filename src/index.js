@@ -218,6 +218,9 @@ class Game extends React.Component {
         console.log("Puzzle="+puzzle);
         if (puzzle.startsWith("slidepuzzle")) {
             puzzle = puzzle.slice(11);
+            if (puzzle.startsWith("/")) {
+                puzzle = puzzle.slice(1);
+            }
             console.log("Puzzle="+puzzle);
         }
         if (puzzle.length <= 0 && "404_hack" in localStorage) {
@@ -225,6 +228,9 @@ class Game extends React.Component {
             console.log("Puzzle="+puzzle);
             if (puzzle.startsWith("slidepuzzle")) {
                 puzzle = puzzle.slice(11);
+                if (puzzle.startsWith("/")) {
+                    puzzle = puzzle.slice(1);
+                }
                 console.log("Puzzle="+puzzle);
             }
             console.log("Reading 404 hack property: " + puzzle);
