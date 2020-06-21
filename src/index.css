@@ -3,8 +3,13 @@ body {
     margin: 10px;
   }
 
-  .grid, .tr, .td {
+.td {
+  border-spacing: 0px;
+}
+
+  .grid, .tr {
       border-spacing: 0px;
+      white-space: nowrap;
   }
 
   .grid {
@@ -15,7 +20,7 @@ body {
   .square {
     background: #000;
     border: 4px solid #000;
-    float: left;
+    display: inline-block;
     overflow: hidden;
     position: relative;
   }
