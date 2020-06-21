@@ -215,13 +215,17 @@ class Game extends React.Component {
         super(props);
 
         let puzzle = window.location.pathname.slice(1);
+        console.log("Puzzle="+puzzle);
         if (puzzle.startsWith("slidepuzzle")) {
             puzzle = puzzle.slice(11);
+            console.log("Puzzle="+puzzle);
         }
         if (puzzle.length <= 0 && "404_hack" in localStorage) {
             puzzle = localStorage["404_hack"];
+            console.log("Puzzle="+puzzle);
             if (puzzle.startsWith("slidepuzzle")) {
                 puzzle = puzzle.slice(11);
+                console.log("Puzzle="+puzzle);
             }
             console.log("Reading 404 hack property: " + puzzle);
             localStorage.removeItem("404_hack");
