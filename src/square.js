@@ -72,6 +72,10 @@ function Square(props) {
         ux = cx + s * nx;
         uy = cy + s * ny;
 
+        console.log("Dist=" + distKM);
+        console.log("Normal=" + [nx, ny]);
+        console.log("user=" + [ux, uy]);
+
         overlay = <>
         <div className="circle" />
         <OverlayCircle className="user-circle" x={ux} y={uy} active={active} inCell={inCell}/>

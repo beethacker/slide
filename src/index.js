@@ -144,8 +144,8 @@ class Board extends React.Component {
         const imSize = this.props.serverData.imgsize;    
         const gridSize = this.props.serverData.gridsize;    
         const aspect = imSize[0] / imSize[1];
-        let width = 0.9*(window.innerWidth) / gridSize[0];
-        let height = 0.9*(window.innerHeight) / gridSize[1];
+        let width = 0.85*(window.innerWidth) / gridSize[0];
+        let height = 0.85*(window.innerHeight) / gridSize[1];
         if (width / height > aspect) {
             width = height * aspect;
         }
