@@ -132,11 +132,13 @@ class Board extends React.Component {
                 }
             }
         }
-        else if (index === this.nearest[0]) {
-            alert ("You're not close enough to the center of this square!");
-        }
-        else {
-            alert ("Can't move this square! You'll have to walk to it first!");
+        else if (neighbors.map(n => squares[n]).includes(0)) {
+            if (index === this.nearest[0]) {
+                alert("You're not close enough to the center of this square!");
+            }
+            else {
+                alert("Can't move this square! You'll have to walk to it first!");
+            }
         }
 
         localStorage[this.props.puzzleName] = squares;
