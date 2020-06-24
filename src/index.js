@@ -45,12 +45,7 @@ class Board extends React.Component {
         setInterval(() => {
             this.setState({width: window.innerWidth, height: window.innerHeight});
         }, 2000);
-
-        setInterval(() => {
-            
-        }, 2000);
     }
-
 
     minIndex(distanceList) {
         let result = -1;
@@ -123,8 +118,10 @@ class Board extends React.Component {
 
         let neighbors = this.neighborsOf(index);
 
-        //TODO need to check if move is allowed!!!
-        const moveAllowed = DEBUG("DISABLE_MOVE_CHECK") || (index === this.nearest);
+        //check if move is allowed!! This cell must be the cell that's closest AND we
+        //need to to be closer than 
+        const moveAllowed = ((index === this.nearest[0])  && (this.nearest[1] < this.props.serverData.cells[index][2]))
+                            || DEBUG("DISABLE_MOVE_CHECK");
 
         if (moveAllowed) {
             for (let i = 0; i < neighbors.length; i++) {
@@ -135,12 +132,18 @@ class Board extends React.Component {
                 }
             }
         }
+        else if (index === this.nearest[0]) {
+            alert ("You're not close enough to the center of this square!");
+        }
+        else {
+            alert ("Can't move this square! You'll have to walk to it first!");
+        }
 
         localStorage[this.props.puzzleName] = squares;
         this.setState({squares: squares });
     }
 
-    renderSquare(i, nearest) {
+    renderSquare(i) {
         const imSize = this.props.serverData.imgsize;    
         const gridSize = this.props.serverData.gridsize;    
         const aspect = imSize[0] / imSize[1];
@@ -155,7 +158,7 @@ class Board extends React.Component {
         return <Square
         img={imgHome + this.props.serverData.img}
         value={this.state.squares[i]} 
-        isNearest={i === this.nearest}
+        isNearest={i === this.nearest[0]}
         geoUser={this.props.geoUser}
         geoCenter={this.props.serverData.cells[i]}
         handleClick={() => this.handleClick(i)} 
@@ -167,16 +170,17 @@ class Board extends React.Component {
     }
 
     updateNearest() {
-        this.nearest = -1;
+        this.nearest = [-1, 9993];
         var distanceList = [];
         if (this.props.hasLocation) {
             distanceList = this.props.serverData.cells.map(cell => Geo.distanceInKm(this.props.geoUser, cell));
-            this.nearest = this.minIndex(distanceList)[0];
+            this.nearest = this.minIndex(distanceList);
         }
     }
 
     render() {
         this.updateNearest();
+        console.log("Nearest is: " + this.nearest);
         return (
             <center>
             <table className="grid">
@@ -210,32 +214,30 @@ function DebugCoords(props) {
     )
 }
 
+function extractPuzzleName(txt) {
+    let puzzle = txt.slice(1);
+    if (puzzle.startsWith("slidepuzzle")) {
+        puzzle = puzzle.slice(11);
+        if (puzzle.startsWith("/")) {
+            puzzle = puzzle.slice(1);
+        }
+    }
+    return puzzle;
+}
+
 class Game extends React.Component {
     constructor(props) {    
         super(props);
 
-        let puzzle = window.location.pathname.slice(1);
-        console.log("Puzzle="+puzzle);
-        if (puzzle.startsWith("slidepuzzle")) {
-            puzzle = puzzle.slice(11);
-            if (puzzle.startsWith("/")) {
-                puzzle = puzzle.slice(1);
-            }
-            console.log("Puzzle="+puzzle);
-        }
+        let puzzle = extractPuzzleName(window.location.pathname);
         if (puzzle.length <= 0 && "404_hack" in localStorage) {
-            puzzle = localStorage["404_hack"];
-            console.log("Puzzle="+puzzle);
-            if (puzzle.startsWith("slidepuzzle")) {
-                puzzle = puzzle.slice(11);
-                if (puzzle.startsWith("/")) {
-                    puzzle = puzzle.slice(1);
-                }
-                console.log("Puzzle="+puzzle);
-            }
-            console.log("Reading 404 hack property: " + puzzle);
+            puzzle = extractPuzzleName(localStorage["404_hack"]);
             localStorage.removeItem("404_hack");
         }
+        if (puzzle.length <= 0 && "LAST_PUZZLE" in localStorage) {
+            puzzle = localStorage["LAST_PUZZLE"];
+        }
+        localStorage["LAST_PUZZLE"] = puzzle;
 
         this.state = {hasLocation: false, 
             coords: [44, -63],
@@ -254,11 +256,19 @@ class Game extends React.Component {
             this.setState({fetchError: "!Main Page!"});
         }
 
+        /*
         this.updateGeoLocation();
         setInterval(() => {
             this.updateGeoLocation();
         }, 15*1000);
-        
+        */
+        /*let handle = */navigator.geolocation.watchPosition( position => {
+            this.setState({ geoError: null, coords: [position.coords.latitude, position.coords.longitude], hasLocation: true});
+        },
+        err => {
+            this.setState({ geoError: "Can't get GPS location" });
+        });
+
         this.debugChangeCoord = this.debugChangeCoord.bind(this);
     }
 
@@ -286,6 +296,7 @@ class Game extends React.Component {
         }
         return (
             <div> 
+                <h1> GPS Slide Puzzle!! </h1>
                 { DEBUG("SET_GPS") ? <DebugCoords coords={this.state.coords} onChange={this.debugChangeCoord}/> : null }
                 <Board puzzleName={this.state.puzzle} serverData={this.state.serverData} geoUser={this.state.coords} hasLocation={this.state.hasLocation}/>
             </div>
