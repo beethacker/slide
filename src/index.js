@@ -5,8 +5,8 @@ import * as Geo from './geo.js';
 import DEBUG from './debug.js'; 
 import Square from './square.js';
 
-let imgHome = "https://beethacker.github.io/slidepuzzle/img/";
-let jsonHome = "https://beethacker.github.io/slidepuzzle/json/";
+let imgHome = "https://beethacker.github.io/slide/img/";
+let jsonHome = "https://beethacker.github.io/slide/json/";
 
 //Hack to make json files fetchable locally. Not sure how to set up node/webpack/whatever for this
 //so I'll just make them available with a separate python server. 
@@ -215,12 +215,16 @@ function DebugCoords(props) {
 }
 
 function extractPuzzleName(txt) {
-    let puzzle = txt.slice(1);
-    if (puzzle.startsWith("slidepuzzle")) {
-        puzzle = puzzle.slice(11);
-        if (puzzle.startsWith("/")) {
-            puzzle = puzzle.slice(1);
-        }
+    let puzzle = txt;
+    if (puzzle.startsWith("/")) {
+        puzzle = puzzle.slice(1);
+    }
+    if (puzzle.startsWith("slide")) {
+        puzzle = puzzle.slice(5);
+
+    }
+    if (puzzle.startsWith("/")) {
+        puzzle = puzzle.slice(1);
     }
     return puzzle;
 }
