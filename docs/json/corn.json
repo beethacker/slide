@@ -1,5 +1,6 @@
 {
     "img" : "camping.jpg",
+    "solveTxt" : "HOOOOORAY! YOU DID IT!",
     "imgsize" : [640, 480],
     "gridsize" : [3, 3],
     "cells": [
