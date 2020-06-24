@@ -1,6 +1,6 @@
 { 
     "img": "reading.jpg",    
-    "solveTxt": "You did it!",
+    "solveTxt": "PUZZLE SOLVED!",
     "solveLink" : "corn",
     "solveLinkTxt" : "Click here for another puzzle!",
     "imgsize" : [480, 528],

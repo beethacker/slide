@@ -17,8 +17,7 @@ function Solved(props) {
     let linkTxt = props.serverData.solveLinkTxt;
     return (
         <center>
-            <h1 className="party"> PUZZLE SOLVED! </h1>
-            <p> {props.serverData.solveTxt} </p>
+            <h1 className="party"> {props.serverData.solveTxt} </h1>
             <p> <a href={link}>{linkTxt}</a> </p>
             <img
                 alt="SOLVED"
@@ -29,7 +28,7 @@ function Solved(props) {
             <div>
                 <button
                     className="btn"
-                    onClick={() => alert("TODO scramble")}>Scramble</button>
+                    onClick={() => props.scrambleFn()}>Scramble</button>
             </div>
         </center>
     );

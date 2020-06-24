@@ -40,7 +40,7 @@ class Board extends React.Component {
             this.scramble(puzzleState);
         }
         //TODO get this from local storage, or scramble a new one
-        this.state = { squares: puzzleState, width: window.innerWidth, height: window.innerHeight };
+        this.state = { squares: puzzleState, width: window.innerWidth, height: window.innerHeight };       
 
         setInterval(() => {
             this.setState({width: window.innerWidth, height: window.innerHeight});
@@ -102,8 +102,7 @@ class Board extends React.Component {
     }
 
     scramble(puzzle) {
-        for (let iterations = 0; iterations < 50; iterations++) {
-            console.log(puzzle);
+        for (let iterations = 0; iterations < 200; iterations++) {
             const zeroIndex = puzzle.indexOf(0);
             const neighborIndices = this.neighborsOf(zeroIndex);
             const randomNeighbor = neighborIndices[Math.floor(Math.random()*neighborIndices.length)];
@@ -201,7 +200,12 @@ class Board extends React.Component {
                  <Solved 
                     imgSrc={imgHome + this.props.serverData.img}
                     serverData={this.props.serverData}
-                    scrambleFn={() => this.scramble}/>
+                    scrambleFn={() => {
+                        let puzzle = this.state.squares.slice();
+                        this.scramble(puzzle);
+                        this.setState({squares: puzzle});
+                        localStorage[this.props.puzzleName] = puzzle;
+                    }}/>
             );
         }
         else {
