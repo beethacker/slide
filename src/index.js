@@ -4,6 +4,7 @@ import './index.css';
 import * as Geo from './geo.js';
 import DEBUG from './debug.js'; 
 import Square from './square.js';
+import Solved from './solved.js';
 
 let imgHome = "https://beethacker.github.io/slide/img/";
 let jsonHome = "https://beethacker.github.io/slide/json/";
@@ -37,7 +38,6 @@ class Board extends React.Component {
             //TODO support for larger puzzles!
             puzzleState = [0, 1, 2, 3, 4, 5, 6, 7, 8];
             this.scramble(puzzleState);
-            localStorage[this.props.puzzleName] = puzzleState;
         }
         //TODO get this from local storage, or scramble a new one
         this.state = { squares: puzzleState, width: window.innerWidth, height: window.innerHeight };
@@ -110,6 +110,7 @@ class Board extends React.Component {
             puzzle[zeroIndex] = puzzle[randomNeighbor];
             puzzle[randomNeighbor] = 0;
         }
+        localStorage[this.props.puzzleName] = puzzle;
     }
     
     handleClick(index) {
@@ -180,30 +181,50 @@ class Board extends React.Component {
         }
     }
 
+    isSolved() {
+        let squares = this.state.squares;
+        for (let i = 0; i < squares.length - 1; i++) {
+            if (squares[i] > squares[i+1]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     render() {
         this.updateNearest();
-        console.log("Nearest is: " + this.nearest);
-        return (
-            <center>
-            <table className="grid">
-                <tr className="board-row">
-                    {this.renderSquare(0)}
-                    {this.renderSquare(1)}
-                    {this.renderSquare(2)}
-                </tr>
-                <tr className="board-row">
-                    {this.renderSquare(3)}
-                    {this.renderSquare(4)}
-                    {this.renderSquare(5)}
-                </tr>
-                <tr className="board-row">
-                    {this.renderSquare(6)}
-                    {this.renderSquare(7)}
-                    {this.renderSquare(8)}
-                </tr>
-            </table>
-            </center>
-        );
+        if (this.isSolved()) {
+            return (
+                 <Solved 
+                    imgSrc={imgHome + this.props.serverData.img}
+                    serverData={this.props.serverData}
+                    scrambleFn={() => this.scramble}/>
+            );
+        }
+        else {
+            return (
+                <center>
+                    <h1> GPS Slide Puzzle! </h1>
+                    <table className="grid">
+                        <tr className="board-row">
+                            {this.renderSquare(0)}
+                            {this.renderSquare(1)}
+                            {this.renderSquare(2)}
+                        </tr>
+                        <tr className="board-row">
+                            {this.renderSquare(3)}
+                            {this.renderSquare(4)}
+                            {this.renderSquare(5)}
+                        </tr>
+                        <tr className="board-row">
+                            {this.renderSquare(6)}
+                            {this.renderSquare(7)}
+                            {this.renderSquare(8)}
+                        </tr>
+                    </table>
+                </center>
+            );
+        }
     }
 }
 
@@ -302,7 +323,6 @@ class Game extends React.Component {
         }
         return (
             <div> 
-                <h1> GPS Slide Puzzle!! </h1>
                 { DEBUG("SET_GPS") ? <DebugCoords coords={this.state.coords} onChange={this.debugChangeCoord}/> : null }
                 <Board puzzleName={this.state.puzzle} serverData={this.state.serverData} geoUser={this.state.coords} hasLocation={this.state.hasLocation}/>
             </div>

@@ -79,3 +79,11 @@ h1 {
      border-width: 4px;
      border-color: lawngreen;
   }
+
+  .btn {
+    background-color: #2e819e;
+    color: white;
+    padding: 20px;
+    border-radius: 25%;
+    font-size: 2em;
+  }
