@@ -182,6 +182,9 @@ class Board extends React.Component {
     }
 
     isSolved() {
+        if (DEBUG("SHOW_SOLVED")) {
+            return true;
+        }
         let squares = this.state.squares;
         for (let i = 0; i < squares.length - 1; i++) {
             if (squares[i] > squares[i+1]) {

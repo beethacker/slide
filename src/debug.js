@@ -8,7 +8,8 @@ let DEBUG_FLAGS = {
     SET_GPS: false,
     CELL_OVERAL: false,
     DISABLE_MOVE_CHECK: true,
-    LOCAL_SERVER: false
+    LOCAL_SERVER: false,
+    SHOW_SOLVED: true
 };
 
 
