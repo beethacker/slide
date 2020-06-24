@@ -1,7 +1,8 @@
 { 
     "img": "reading.jpg",    
-    "solveTxt": "You did it! Click here for another puzzle!",
-    "solveLink" : "beethacker.github.io/slide/corn",
+    "solveTxt": "You did it!",
+    "solveLink" : "corn",
+    "solveLinkTxt" : "Click here for another puzzle!",
     "imgsize" : [480, 528],
     "gridsize" : [3, 3],
     "cells": [
