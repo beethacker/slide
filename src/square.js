@@ -33,7 +33,8 @@ function Square(props) {
     const inCell = props.isNearest;// || (typeof props.geoUser !== undefined);
     let classes = inCell ? "square selected" : "square";
     let overlay = null;
-    if (inCell) {
+    let showOverlay = true; //inCell
+    if (showOverlay) {
         //User coordinates that we'll calculate!
         let ux;
         let uy;        
@@ -73,15 +74,15 @@ function Square(props) {
         uy = cy + s * ny;
 
         /*
-        console.log("Dist=" + distKM);
-        console.log("Normal=" + [nx, ny]);
-        console.log("user=" + [ux, uy]);
+            console.log("Dist=" + distKM);
+            console.log("Normal=" + [nx, ny]);
+            console.log("user=" + [ux, uy]);
         */
 
         overlay = <>
         <div className="circle" />
-        <OverlayCircle className="user-circle" x={ux} y={uy} active={active} inCell={inCell}/>
-        <OverlayCircle className="center-circle" x={cx} y={cy} active={active} inCell={inCell}/>
+        <OverlayCircle className="user-circle" x={ux} y={uy} active={active} inCell={showOverlay}/>
+        <OverlayCircle className="center-circle" x={cx} y={cy} active={active} inCell={showOverlay}/>
         </>
     }
 
@@ -103,7 +104,7 @@ function Square(props) {
         <td className={classes} onClick={() => props.handleClick()} style={{"width": props.w, "height": props.h}}>
             {debugOverlay}
             {overlay}        
-            <CroppedImage img={props.img} w={props.cols*props.w} h={props.rows*props.h} sx={x*props.w} sy={y*props.h} inCell={inCell}/>
+            <CroppedImage img={props.img} w={props.cols*props.w} h={props.rows*props.h} sx={x*props.w} sy={y*props.h} inCell={showOverlay}/>
         </td>
     );
 }

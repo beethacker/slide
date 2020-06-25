@@ -1,11 +1,11 @@
 export default DEBUG;
 
-let PRODUCTION = true;
+let PRODUCTION = false;
 
 //Some debugging options
 let DEBUG_FLAGS = {
     CLEAR_STATE: false,
-    SET_GPS: false,
+    SET_GPS: true,
     CELL_OVERAL: false,
     DISABLE_MOVE_CHECK: false,
     LOCAL_SERVER: false,

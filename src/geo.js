@@ -16,10 +16,10 @@ function distanceInKm(a, b) {
 }
 
 function kmToLat(a) {
-    return 110.574*Math.abs(a);
+    return 110.574*a;
 }
 
 function kmToLong(a, lat) {
     const latRadians = lat*Math.PI / 180;
-    return 111.32 * Math.abs(a) * Math.cos(latRadians);
+    return 111.32 * a * Math.abs(Math.cos(latRadians));
 }

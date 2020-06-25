@@ -297,7 +297,9 @@ class Game extends React.Component {
         }, 15*1000);
         */
         /*let handle = */navigator.geolocation.watchPosition( position => {
-            this.setState({ geoError: null, coords: [position.coords.latitude, position.coords.longitude], hasLocation: true});
+            if (!DEBUG("SET_GPS")) {
+                this.setState({ geoError: null, coords: [position.coords.latitude, position.coords.longitude], hasLocation: true});
+            }
         },
         err => {
             this.setState({ geoError: "Can't get GPS location" });
@@ -318,7 +320,7 @@ class Game extends React.Component {
 
     debugChangeCoord(e) {
         const newCoords = e.target.value.split(",").map(f => parseFloat(f));
-        this.setState({ coords: newCoords });
+        this.setState({ coords: newCoords, hasLocation: true });
     }
 
     render() {
