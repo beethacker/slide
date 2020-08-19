@@ -12,13 +12,18 @@ function Solved(props) {
     else {
         height = width / aspect;
     }
-    //let link = "corn";
     let link = props.serverData.solveLink;
     let linkTxt = props.serverData.solveLinkTxt;
+
+    let linkTags = <></>;
+    if (link && linkTxt) {
+        linkTags = <p> <a href={link}>{linkTxt}</a> </p>;
+    }
+
     return (
         <center>
             <h1 className="party"> {props.serverData.solveTxt} </h1>
-            <p> <a href={link}>{linkTxt}</a> </p>
+            { linkTags }
             <img
                 alt="SOLVED"
                 src={props.imgSrc}
